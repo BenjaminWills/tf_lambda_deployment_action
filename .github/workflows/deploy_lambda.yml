@@ -1,0 +1,56 @@
+name: Deploy lambda
+on: 
+  push:
+    paths:
+      - lambda_payload/**
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  setup-lambda:
+    runs-on: ubuntu-latest
+    name: Setup lambda function
+    env:
+      GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: zip lambda payload
+        run: python zip.py
+
+      - name: Show terraform version
+        run: terraform --version
+
+      - name: configure aws
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-session-name: Github
+          aws-region: eu-west-2
+        
+      - name: Terraform init and validate
+        run: |
+          cd ${{secrets.TERRAFORM_DIRECTORY}}
+          terraform init && terraform validate
+        
+      - name: Plan terraform changes
+        run: |
+          cd ${{secrets.TERRAFORM_DIRECTORY}}
+          terraform plan
+          
+      - name: Terraform apply
+        run: |
+          cd ${{secrets.TERRAFORM_DIRECTORY}}
+          yes yes | terraform apply
