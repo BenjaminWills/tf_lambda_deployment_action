@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "bw-tf-backend-bucket-file-notifs"
+    bucket = "bucket"
     key = "terraform.tfstate"
-    region = "eu-west-2"
+    region = "region"
   }
 }
